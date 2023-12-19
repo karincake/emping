@@ -1,0 +1,38 @@
+env:
+  host: http://localhost:8100
+  accPath: /account
+  authPath: /auth
+
+reqList:
+  - url: '{{host}}{{accPath}}/register'
+    method: POST
+    header:
+      - [Content-Type, json/application/json]
+    body: '{}'
+    want:
+      statusCode: 422
+  - url: "{{host}}{{accPath}}/register"
+    method: POST
+    header:
+      - [Content-Type, json/application/json]
+    body: '{
+            "email" : "santoso01@gmail.com",
+            "name" : "santosopratama",
+            "password": "12341234",
+            "repassword": "12341234"
+          }'
+    want:
+      statusCode: 200
+      bodyType: map
+      body:
+        email: santoso01@gmail.com
+        name: santosopratama
+  - url: '{{host}}{{accPath}}/resend-confirmation-email'
+    method: POST
+    header:
+      - [Content-Type, json/application/json]
+    body: '{"email": "santoso01@gmail.com"}'
+    want:
+      statusCode: 200
+      bodyType: plain
+      body: "{\"message\":\"request is done successfully\"}\n"
