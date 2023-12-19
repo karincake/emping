@@ -1,0 +1,32 @@
+env:
+  host: http://localhost:8100
+  accPath: /account
+  authPath: /auth
+
+reqList:
+  - url: "{{host}}{{accPath}}/register"
+    method: POST
+    header:
+      - [Content-Type, json/application/json]
+    body: '{}'
+    want:
+      statusCode: 403
+  - url: "{{host}}{{accPath}}/register"
+    method: POST
+    header:
+      - [Content-Type, json/application/json]
+    body: '{
+            "email" : "santoso02@gmail.com",
+            "name" : "santosodwimangsa",
+            "password": "12341234",
+            "repassword": "12341234"
+          }'
+    want:
+      statusCode: 422
+  - url: "{{host}}{{accPath}}/confirm-by-email"
+    method: POST
+    header:
+      - [Content-Type, json/application/json]
+    body: '{}'
+    want:
+      statusCode: 403
