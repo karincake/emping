@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"os"
 	"regexp"
@@ -97,13 +96,15 @@ func execute(r Request, e Env) {
 
 func main() {
 	args := os.Args[1:]
-	if args[0] == "" {
-		log.Fatal("please provide a valid yaml file")
+	if len(os.Args) == 1 {
+		os.Stderr.Write([]byte("error: please provide a valid yaml file as the first argument\n\n"))
+		return
 	}
 
 	f, err := os.ReadFile(args[0])
 	if err != nil {
-		log.Fatal(err)
+		os.Stderr.Write([]byte("error: " + err.Error() + "\n\n"))
+		return
 	}
 
 	myJob := Job{
@@ -111,7 +112,8 @@ func main() {
 		ReqList: []Request{},
 	}
 	if err := yaml.Unmarshal(f, &myJob); err != nil {
-		log.Fatal(err)
+		os.Stderr.Write([]byte("error: " + err.Error() + "\n\n"))
+		return
 	}
 
 	for _, req := range myJob.ReqList {
