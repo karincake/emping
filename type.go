@@ -1,14 +1,14 @@
 package main
 
 type RequestMethod string
-type ResponseType string
+type BodyType string
 
 type Env map[string]string
 
 type Response struct {
-	StatusCode int          `yaml:"statusCode"`
-	Type       ResponseType `yaml:"type"`
-	Value      any          `yaml:"value"`
+	StatusCode int      `yaml:"statusCode"`
+	BodyType   BodyType `yaml:"bodyType"`
+	Body       any      `yaml:"body"`
 }
 
 type Request struct {
@@ -24,11 +24,11 @@ type Job struct {
 	ReqList []Request `yaml:"reqList"`
 }
 
-const RMGet = "GET"
-const RMPost = "POST"
-const RMPatch = "PATCH"
-const RMPut = "PUT"
-const RMDelete = "DELETE"
+const RMGet RequestMethod = "GET"
+const RMPost RequestMethod = "POST"
+const RMPatch RequestMethod = "PATCH"
+const RMPut RequestMethod = "PUT"
+const RMDelete RequestMethod = "DELETE"
 
-const RTPlain = "plain"
-const RMJson = "json"
+const RTPlain BodyType = "plain"
+const RMJson BodyType = "map"
