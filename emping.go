@@ -2,9 +2,9 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"os"
 	"regexp"
@@ -56,20 +56,54 @@ func execute(r Request, e Env) {
 		os.Stderr.Write([]byte(fmt.Sprintf("Failed: wrong status, want: %v, get: %v\n", r.Want.StatusCode, resp.StatusCode)))
 	}
 
-	fmt.Println("Succeed")
+	errorCount := 0
+	if r.Want.Body != nil {
+		if r.Want.BodyType == "map" {
+			if wantBody, ok := r.Want.Body.(map[string]any); ok {
+				keyVal := map[string]any{}
+				json.Unmarshal(respBody, &keyVal)
+				for kWantBody, vWantBody := range wantBody {
+					vRespBody, ok := keyVal[kWantBody]
+					if !ok {
+						errorCount++
+						os.Stderr.Write([]byte(fmt.Sprintf("Failed: misisng key '%v' on response body \n", kWantBody)))
+						break
+					}
+					if vWantBody != vRespBody {
+						errorCount++
+						os.Stderr.Write([]byte(fmt.Sprintf("Failed: different value for key '%v' \n", kWantBody)))
+						break
+					}
+				}
+			} else {
+				errorCount++
+				os.Stderr.Write([]byte(fmt.Sprintf("Failed: wanted body specs doesn't fit 'bodyType'\n")))
+			}
+		} else if r.Want.Body != string(respBody) {
+			errorCount++
+			os.Stderr.Write([]byte(fmt.Sprintf("Failed: different resp body\n")))
+		}
+	}
+
+	if errorCount > 0 {
+		os.Exit(1)
+	}
+	fmt.Printf("Succeed\n\n")
 
 	defer resp.Body.Close()
 }
 
 func main() {
 	args := os.Args[1:]
-	if args[0] == "" {
-		log.Fatal("please provide a valid yaml file")
+	if len(os.Args) == 1 {
+		os.Stderr.Write([]byte("error: please provide a valid yaml file as the first argument\n\n"))
+		os.Exit(1)
 	}
 
 	f, err := os.ReadFile(args[0])
 	if err != nil {
-		log.Fatal(err)
+		os.Stderr.Write([]byte("error: " + err.Error() + "\n\n"))
+		os.Exit(1)
 	}
 
 	myJob := Job{
@@ -77,7 +111,8 @@ func main() {
 		ReqList: []Request{},
 	}
 	if err := yaml.Unmarshal(f, &myJob); err != nil {
-		log.Fatal(err)
+		os.Stderr.Write([]byte("error: " + err.Error() + "\n\n"))
+		os.Exit(1)
 	}
 
 	for _, req := range myJob.ReqList {
