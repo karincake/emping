@@ -58,7 +58,7 @@ func execute(r Request, e Env) {
 		return
 	}
 
-	success := true
+	errorCount := 0
 	if r.Want.Body != nil {
 		if r.Want.BodyType == "map" {
 			if wantBody, ok := r.Want.Body.(map[string]any); ok {
@@ -67,29 +67,30 @@ func execute(r Request, e Env) {
 				for kWantBody, vWantBody := range wantBody {
 					vRespBody, ok := keyVal[kWantBody]
 					if !ok {
+						errorCount++
 						os.Stderr.Write([]byte(fmt.Sprintf("Failed: misisng key '%v' on response body \n", kWantBody)))
-						success = false
 						break
 					}
 					if vWantBody != vRespBody {
+						errorCount++
 						os.Stderr.Write([]byte(fmt.Sprintf("Failed: different value for key '%v' \n", kWantBody)))
-						success = false
 						break
 					}
 				}
 			} else {
-				success = false
+				errorCount++
 				os.Stderr.Write([]byte(fmt.Sprintf("Failed: wanted body specs doesn't fit 'bodyType'\n")))
 			}
 		} else if r.Want.Body != string(respBody) {
-			success = false
-			os.Stderr.Write([]byte(fmt.Sprintf("Failed: different resp body\n")))
+			errorCount++
+			os.Stderr.Write([]byte(fmt.Sprintf("Failed: wanted body specs doesn't fit 'bodyType'\n")))
 		}
 	}
 
-	if success {
-		fmt.Printf("Succeed\n\n")
+	if errorCount > 0 {
+		os.Exit(1)
 	}
+	fmt.Printf("Succeed\n\n")
 
 	defer resp.Body.Close()
 }
@@ -98,12 +99,14 @@ func main() {
 	args := os.Args[1:]
 	if len(os.Args) == 1 {
 		os.Stderr.Write([]byte("error: please provide a valid yaml file as the first argument\n\n"))
+		os.Exit(1)
 		return
 	}
 
 	f, err := os.ReadFile(args[0])
 	if err != nil {
 		os.Stderr.Write([]byte("error: " + err.Error() + "\n\n"))
+		os.Exit(1)
 		return
 	}
 
@@ -113,6 +116,7 @@ func main() {
 	}
 	if err := yaml.Unmarshal(f, &myJob); err != nil {
 		os.Stderr.Write([]byte("error: " + err.Error() + "\n\n"))
+		os.Exit(1)
 		return
 	}
 
